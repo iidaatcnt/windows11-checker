@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows11システム要件チェッカー</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0078d4, #106ebe);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+        }
+        
+        .input-section label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .spec-input {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        .spec-input:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+        
+        .check-btn {
+            background: linear-gradient(135deg, #0078d4, #106ebe);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        .check-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,120,212,0.3);
+        }
+        
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .result-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 5px solid;
+        }
+        
+        .result-item.pass {
+            background: #f0f9ff;
+            border-left-color: #10b981;
+        }
+        
+        .result-item.fail {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+        
+        .result-icon {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .pass .result-icon {
+            color: #10b981;
+        }
+        
+        .fail .result-icon {
+            color: #ef4444;
+        }
+        
+        .final-result {
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+        
+        .final-result.compatible {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .final-result.incompatible {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        .schedule {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .schedule h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .schedule ul {
+            list-style: none;
+            color: #856404;
+        }
+        
+        .schedule li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .schedule li::before {
+            content: "⚠️";
+            position: absolute;
+            left: 0;
+        }
+        
+        .sample-data {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .sample-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .sample-btn:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖥️ Windows11要件チェッカー</h1>
+            <p>お使いのPCがWindows11に対応しているかチェックします</p>
+        </div>
+        
+        <div class="content">
+            <div class="input-section">
+                <label for="specInput">
+                    システム仕様を貼り付けてください
+                    <br><small>設定 > システム > デバイスの仕様 からコピー＆ペースト</small>
+                </label>
+                <textarea 
+                    id="specInput" 
+                    class="spec-input" 
+                    placeholder="例：&#10;デバイス名	DESKTOP-ABC123&#10;プロセッサ	Intel(R) Core(TM) i5-8400 CPU @ 2.80GHz   2.81 GHz&#10;実装 RAM	16.0 GB (15.9 GB 使用可能)&#10;システムの種類	64 ビット オペレーティング システム、x64 ベース プロセッサ"
+                ></textarea>
+                
+                <button class="sample-btn" onclick="loadSampleData()">
+                    📋 サンプルデータを読み込む
+                </button>
+                
+                <div class="sample-data">
+                    <strong>貼り付け方法：</strong><br>
+                    1. Windows設定を開く (Win + I)<br>
+                    2. 「システム」→「デバイスの仕様」<br>
+                    3. テキストを全選択してコピー<br>
+                    4. 上のテキストエリアに貼り付け
+                </div>
+            </div>
+            
+            <button class="check-btn" onclick="checkCompatibility()">
+                🔍 Windows11対応チェック
+            </button>
+            
+            <div id="results" class="results">
+                <div id="resultsList"></div>
+                <div id="finalResult" class="final-result"></div>
+                <div id="schedule" class="schedule" style="display: none;">
+                    <h3>⚠️ Windows10サポート終了スケジュール</h3>
+                    <ul>
+                        <li><strong>2025年10月14日</strong>: Windows10サポート終了</li>
+                        <li><strong>推奨アクション</strong>: 6ヶ月以内の新PC購入検討</li>
+                        <li><strong>セキュリティ</strong>: ウイルス対策ソフトの強化</li>
+                        <li><strong>データ保護</strong>: 定期的なバックアップ実施</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loadSampleData() {
+            const sampleData = `デバイス名	CNTSVLLC-Windows
+プロセッサ	Intel(R) Core(TM) i5-7500 CPU @ 3.40GHz   3.41 GHz
+実装 RAM	16.0 GB (15.9 GB 使用可能)
+グラフィックス カード	Intel(R) HD Graphics 630 (128 MB)
+デバイス ID	9B70C23F-7844-43E5-8B68-4BAD386F83E3
+製品 ID	00330-50129-42870-AAOEM
+システムの種類	64 ビット オペレーティング システム、x64 ベース プロセッサ
+ペンとタッチ	このディスプレイでは、ペン入力とタッチ入力は利用できません`;
+            
+            document.getElementById('specInput').value = sampleData;
+        }
+
+        function checkCompatibility() {
+            const input = document.getElementById('specInput').value;
+            
+            if (!input.trim()) {
+                alert('システム仕様を入力してください');
+                return;
+            }
+            
+            const specs = parseSpecs(input);
+            const requirements = checkRequirements(specs);
+            displayResults(requirements);
+        }
+
+        function parseSpecs(input) {
+            const specs = {};
+            
+            // プロセッサの解析
+            const cpuMatch = input.match(/プロセッサ\s+(.+)/);
+            if (cpuMatch) {
+                specs.cpu = cpuMatch[1];
+            }
+            
+            // RAMの解析
+            const ramMatch = input.match(/実装 RAM\s+([\d.]+)\s*GB/);
+            if (ramMatch) {
+                specs.ram = parseFloat(ramMatch[1]);
+            }
+            
+            // システムタイプの解析
+            const systemMatch = input.match/(/システムの種類\s+(.+)/);
+            if (systemMatch) {
+                specs.systemType = systemMatch[1];
+            }
+            
+            return specs;
+        }
+
+        function checkRequirements(specs) {
+            const results = [];
+            let isCompatible = true;
+            
+            // CPU要件チェック
+            const cpuResult = checkCPU(specs.cpu);
+            results.push({
+                name: 'プロセッサ',
+                requirement: '第8世代Intel以降 または AMD Zen2以降',
+                detected: specs.cpu || '検出できませんでした',
+                passed: cpuResult.passed,
+                details: cpuResult.details
+            });
+            if (!cpuResult.passed) isCompatible = false;
+            
+            // RAM要件チェック
+            const ramPassed = specs.ram >= 4;
+            results.push({
+                name: 'メモリ (RAM)',
+                requirement: '4GB以上',
+                detected: specs.ram ? `${specs.ram}GB` : '検出できませんでした',
+                passed: ramPassed
+            });
+            if (!ramPassed) isCompatible = false;
+            
+            // 64bit要件チェック
+            const is64bit = specs.systemType && specs.systemType.includes('64');
+            results.push({
+                name: 'システム',
+                requirement: '64ビット対応',
+                detected: specs.systemType || '検出できませんでした',
+                passed: is64bit
+            });
+            if (!is64bit) isCompatible = false;
+            
+            // TPM・セキュアブート（検出不可のため警告として表示）
+            results.push({
+                name: 'TPM 2.0',
+                requirement: 'TPM 2.0対応',
+                detected: '要手動確認',
+                passed: null,
+                warning: true
+            });
+            
+            results.push({
+                name: 'セキュアブート',
+                requirement: 'セキュアブート対応',
+                detected: '要手動確認',
+                passed: null,
+                warning: true
+            });
+            
+            return {
+                results: results,
+                isCompatible: isCompatible
+            };
+        }
+
+        function checkCPU(cpu) {
+            if (!cpu) {
+                return { passed: false, details: 'CPUを検出できませんでした' };
+            }
+            
+            const cpuLower = cpu.toLowerCase();
+            
+            // ========== INTEL CPU ==========
+            
+            // Intel Core シリーズ (メイン)
+            const intelCoreMatch = cpu.match(/Intel.*Core.*i[3579]-(\d{1,2})\d{2,3}[A-Z]*/i);
+            if (intelCoreMatch) {
+                const generation = parseInt(intelCoreMatch[1]);
+                if (generation >= 8) {
+                    return { passed: true, details: `第${generation}世代Intel Core (✅対応)` };
+                } else {
+                    return { passed: false, details: `第${generation}世代Intel Core (❌非対応: 第8世代以降が必要)` };
+                }
+            }
+            
+            // Intel Core M シリーズ
+            if (cpu.match(/Intel.*Core.*M[357]-\d{4}/i)) {
+                return { passed: false, details: 'Intel Core M (❌非対応: 低電力プロセッサ)' };
+            }
+            
+            // Intel Xeon (一部対応)
+            if (cpu.match(/Intel.*Xeon/i)) {
+                // Xeon E-2100シリーズ以降は対応
+                const xeonMatch = cpu.match(/Xeon.*E-(\d{1,2})\d{2}/i);
+                if (xeonMatch) {
+                    const series = parseInt(xeonMatch[1]);
+                    if (series >= 21) {
+                        return { passed: true, details: 'Intel Xeon E-2100+シリーズ (✅対応)' };
+                    }
+                }
+                return { passed: false, details: 'Intel Xeon (❌多くは非対応)' };
+            }
+            
+            // Intel Pentium Gold (一部対応)
+            if (cpu.match(/Intel.*Pentium.*Gold/i)) {
+                const pentiumMatch = cpu.match(/Pentium.*Gold\s+G(\d{1,2})\d{2}/i);
+                if (pentiumMatch) {
+                    const generation = parseInt(pentiumMatch[1]);
+                    if (generation >= 54) { // G5400以降
+                        return { passed: true, details: 'Intel Pentium Gold G5400+ (✅対応)' };
+                    }
+                }
+                return { passed: false, details: 'Intel Pentium Gold (❌多くは非対応)' };
+            }
+            
+            // Intel Pentium (一般)
+            if (cpu.match(/Intel.*Pentium/i)) {
+                return { passed: false, details: 'Intel Pentium (❌非対応)' };
+            }
+            
+            // Intel Celeron (一部対応)
+            if (cpu.match(/Intel.*Celeron/i)) {
+                const celeronMatch = cpu.match(/Celeron.*N(\d{1,2})\d{2}/i);
+                if (celeronMatch) {
+                    const generation = parseInt(celeronMatch[1]);
+                    if (generation >= 41) { // N4100以降
+                        return { passed: true, details: 'Intel Celeron N4100+ (✅対応)' };
+                    }
+                }
+                return { passed: false, details: 'Intel Celeron (❌多くは非対応)' };
+            }
+            
+            // Intel Atom
+            if (cpu.match(/Intel.*Atom/i)) {
+                return { passed: false, details: 'Intel Atom (❌非対応)' };
+            }
+            
+            // ========== AMD CPU ==========
+            
+            // AMD Ryzen (詳細判定)
+            const amdRyzenMatch = cpu.match(/AMD.*Ryzen\s+[3579]\s+(\d{1,2})\d{2}[A-Z]*/i);
+            if (amdRyzenMatch) {
+                const series = parseInt(amdRyzenMatch[1]);
+                if (series >= 30) {
+                    return { passed: true, details: `AMD Ryzen ${series}00シリーズ (✅対応: Zen2+)` };
+                } else {
+                    return { passed: false, details: `AMD Ryzen ${series}00シリーズ (❌非対応: Zen2以降が必要)` };
+                }
+            }
+            
+            // AMD Ryzen Threadripper
+            if (cpu.match(/AMD.*Ryzen.*Threadripper/i)) {
+                const trMatch = cpu.match(/Threadripper\s+(\d{1,2})\d{2}/i);
+                if (trMatch) {
+                    const generation = parseInt(trMatch[1]);
+                    if (generation >= 39) { // 3990X以降
+                        return { passed: true, details: 'AMD Ryzen Threadripper 3000+ (✅対応)' };
+                    }
+                }
+                return { passed: false, details: 'AMD Ryzen Threadripper (❌多くは非対応)' };
+            }
+            
+            // AMD Ryzen (簡易検出)
+            if (cpu.match(/AMD.*Ryzen/i)) {
+                return { passed: null, details: 'AMD Ryzen検出 (シリーズ番号の確認が必要)' };
+            }
+            
+            // AMD EPYC (サーバー用、一部対応)
+            if (cpu.match(/AMD.*EPYC/i)) {
+                const epycMatch = cpu.match(/EPYC\s+(\d{1,2})\d{2}/i);
+                if (epycMatch) {
+                    const generation = parseInt(epycMatch[1]);
+                    if (generation >= 72) { // 7000シリーズ以降
+                        return { passed: true, details: 'AMD EPYC 7000+シリーズ (✅対応)' };
+                    }
+                }
+                return { passed: false, details: 'AMD EPYC (❌多くは非対応)' };
+            }
+            
+            // AMD Athlon (新しいもののみ対応)
+            if (cpu.match(/AMD.*Athlon/i)) {
+                if (cpu.match(/Athlon.*3000G/i)) {
+                    return { passed: true, details: 'AMD Athlon 3000G (✅対応)' };
+                }
+                return { passed: false, details: 'AMD Athlon (❌多くは非対応)' };
+            }
+            
+            // AMD A-Series APU
+            if (cpu.match(/AMD.*A\d+-/i)) {
+                return { passed: false, details: 'AMD A-Series APU (❌非対応)' };
+            }
+            
+            // AMD FX シリーズ
+            if (cpu.match(/AMD.*FX-/i)) {
+                return { passed: false, details: 'AMD FX シリーズ (❌非対応)' };
+            }
+            
+            // ========== その他のCPU ==========
+            
+            // Apple Silicon (M1/M2) - 参考情報
+            if (cpu.match(/Apple\s+M[12]/i)) {
+                return { passed: null, details: 'Apple Silicon (M1/M2) - Windows11はARM版のみ' };
+            }
+            
+            // Qualcomm Snapdragon
+            if (cpu.match(/Qualcomm.*Snapdragon/i)) {
+                const snapMatch = cpu.match(/Snapdragon\s+(\d{3})/i);
+                if (snapMatch) {
+                    const model = parseInt(snapMatch[1]);
+                    if (model >= 850) {
+                        return { passed: true, details: `Qualcomm Snapdragon ${model} (✅ARM版対応)` };
+                    }
+                }
+                return { passed: false, details: 'Qualcomm Snapdragon (❌多くは非対応)' };
+            }
+            
+            // VIA C-Series
+            if (cpu.match(/VIA/i)) {
+                return { passed: false, details: 'VIA プロセッサ (❌非対応)' };
+            }
+            
+            // 仮想マシン検出
+            if (cpu.match(/(Virtual|VM|QEMU|KVM)/i)) {
+                return { passed: null, details: '仮想マシン環境検出 (ホストCPUに依存)' };
+            }
+            
+            // その他不明なCPU
+            return { passed: false, details: '対応CPUか判定できませんでした (要手動確認)' };
+        }
+
+        function displayResults(requirements) {
+            const resultsDiv = document.getElementById('results');
+            const resultsListDiv = document.getElementById('resultsList');
+            const finalResultDiv = document.getElementById('finalResult');
+            const scheduleDiv = document.getElementById('schedule');
+            
+            // 結果リストの作成
+            resultsListDiv.innerHTML = '';
+            
+            requirements.results.forEach(result => {
+                const item = document.createElement('div');
+                
+                if (result.warning) {
+                    item.className = 'result-item';
+                    item.style.background = '#fff3cd';
+                    item.style.borderLeftColor = '#ffc107';
+                    item.innerHTML = `
+                        <div>
+                            <strong>${result.name}</strong><br>
+                            <small>要件: ${result.requirement}</small><br>
+                            <small>検出: ${result.detected}</small>
+                        </div>
+                        <div class="result-icon" style="color: #ffc107;">⚠️</div>
+                    `;
+                } else {
+                    item.className = `result-item ${result.passed ? 'pass' : 'fail'}`;
+                    item.innerHTML = `
+                        <div>
+                            <strong>${result.name}</strong><br>
+                            <small>要件: ${result.requirement}</small><br>
+                            <small>検出: ${result.detected}</small>
+                            ${result.details ? `<br><small style="font-style: italic;">${result.details}</small>` : ''}
+                        </div>
+                        <div class="result-icon">${result.passed ? '✅' : '❌'}</div>
+                    `;
+                }
+                
+                resultsListDiv.appendChild(item);
+            });
+            
+            // 最終判定の表示
+            if (requirements.isCompatible) {
+                finalResultDiv.className = 'final-result compatible';
+                finalResultDiv.innerHTML = `
+                    <h2>🎉 Windows11対応</h2>
+                    <p>お使いのPCはWindows11の主要要件を満たしています！</p>
+                    <small>※ TPM 2.0とセキュアブートは別途確認が必要です</small>
+                `;
+                scheduleDiv.style.display = 'none';
+            } else {
+                finalResultDiv.className = 'final-result incompatible';
+                finalResultDiv.innerHTML = `
+                    <h2>❌ Windows11非対応</h2>
+                    <p>お使いのPCはWindows11の要件を満たしていません</p>
+                    <small>新しいPCの購入を検討することをお勧めします</small>
+                `;
+                scheduleDiv.style.display = 'block';
+            }
+            
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
